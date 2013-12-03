@@ -16,6 +16,7 @@ describe User do
   it { should respond_to(:password_confirmation) }
   it { should respond_to(:remember_token) }
   it { should respond_to(:authenticate) }
+  it { should respond_to(:climbs) }
 
   it { should be_valid }
 
@@ -102,5 +103,39 @@ describe User do
   describe "remember token" do
     before { @user.save }
     its(:remember_token) { should_not be_blank }
+  end
+
+  describe "climb associations" do
+
+    before { @user.save }
+    let!(:older_climb) do
+      FactoryGirl.create(:climb, user: @user, created_at: 1.day.ago)
+    end
+    let!(:newer_climb) do
+      FactoryGirl.create(:climb, user: @user, created_at: 1.hour.ago)
+    end
+
+    it "should have the right climbs in the right order" do
+      expect(@user.climbs.to_a).to eq [newer_climb, older_climb]
+    end
+
+    it "should destroy associated climbs" do
+      climbs = @user.climbs.to_a
+      @user.destroy
+      expect(climbs).not_to be_empty
+      climbs.each do |climb|
+        expect(Climb.where(id: climb.id)).to be_empty
+      end
+    end
+
+    describe "status" do
+      let(:unfollowed_post) do
+        FactoryGirl.create(:climb, user: FactoryGirl.create(:user))
+      end
+
+      its(:feed) { should include(newer_climb) }
+      its(:feed) { should include(older_climb) }
+      its(:feed) { should_not include(unfollowed_post) }
+    end
   end
 end

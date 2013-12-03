@@ -68,6 +68,19 @@ describe "Authentication" do
         end
       end
 
+      describe "in the Climbs controller" do
+
+        describe "submitting to the create action" do
+          before { post climbs_path }
+          specify { expect(response).to redirect_to(signin_path) }
+        end
+
+        describe "submitting to the destroy action" do
+          before { delete climb_path(FactoryGirl.create(:climb)) }
+          specify { expect(response).to redirect_to(signin_path) }
+        end
+      end
+
       describe "in the Users controller" do
 
         describe "visiting the edit page" do

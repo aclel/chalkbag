@@ -1,0 +1,12 @@
+<li>
+  <span class="content"><%= climb.content %></span>
+  <span class="grade"><%= climb.grade %></span>
+  <span class="timestamp">
+    Posted <%= time_ago_in_words(climb.created_at) %> ago.
+  </span>
+  <% if current_user?(climb.user) %>
+    <%= link_to "delete", climb, method: :delete,
+                                     data: { confirm: "You sure?" },
+                                     title: climb.content %>
+  <% end %>
+</li>
