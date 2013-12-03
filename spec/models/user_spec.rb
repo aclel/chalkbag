@@ -16,7 +16,15 @@ describe User do
   it { should respond_to(:password_confirmation) }
   it { should respond_to(:remember_token) }
   it { should respond_to(:authenticate) }
-  it { should respond_to(:climbs) }
+  it { should respond_to(:climbs) }  
+  it { should respond_to(:feed) }
+  it { should respond_to(:relationships) } 
+  it { should respond_to(:followed_users) }
+  it { should respond_to(:reverse_relationships) }
+  it { should respond_to(:follows) }
+  it { should respond_to(:following?) }
+  it { should respond_to(:follow!) }
+  it { should respond_to(:unfollow!) }
 
   it { should be_valid }
 
@@ -136,6 +144,59 @@ describe User do
       its(:feed) { should include(newer_climb) }
       its(:feed) { should include(older_climb) }
       its(:feed) { should_not include(unfollowed_post) }
+    end
+
+    describe "following" do
+      let(:other_user) { FactoryGirl.create(:user) }
+      before do
+        @user.save
+        @user.follow!(other_user)
+      end
+      it { should be_following(other_user) }
+      its(:followed_users) { should include(other_user) }
+
+      describe "followed user" do
+        subject { other_user }
+        its(:follows) { should include(@user) }
+      end
+
+      describe "and unfollowing" do
+        before { @user.unfollow!(other_user) }
+
+        it { should_not be_following(other_user) }
+        its(:followed_users) { should_not include(other_user) }
+      end
+    end
+  end
+  
+  describe "climb associations" do
+    before { @user.save }
+    let!(:older_climb) do
+      FactoryGirl.create(:climb, user: @user, created_at: 1.day.ago)
+    end
+    let!(:newer_climb) do
+      FactoryGirl.create(:climb, user: @user, created_at: 1.hour.ago)
+    end
+
+    describe "status" do
+      let(:unfollowed_post) do
+        FactoryGirl.create(:climb, user: FactoryGirl.create(:user))
+      end
+      let(:followed_user) { FactoryGirl.create(:user) }
+
+      before do
+        @user.follow!(followed_user)
+        3.times { followed_user.climbs.create!(content: "Lorem ipsum", grade: 20) }
+      end
+
+      its(:feed) { should include(newer_climb) }
+      its(:feed) { should include(older_climb) }
+      its(:feed) { should_not include(unfollowed_post) }
+      its(:feed) do
+        followed_user.climbs.each do |climb|
+          should include(climb)
+        end
+      end
     end
   end
 end
